@@ -11,6 +11,7 @@ import FindFriends from './pages/FindFriends.jsx'
 import Chats from './pages/Chats.jsx'
 import Notifications from './pages/Notifications.jsx'
 import ProfileSettings from './pages/ProfileSettings.jsx'
+import ChatRoom from './pages/ChatRoom.jsx'
 import ProfileCompletionBanner from './components/ProfileCompletionBanner.jsx'
 
 export default function App() {
@@ -68,6 +69,7 @@ export default function App() {
       <Route path="/menu" element={session ? <Menu /> : <Navigate to="/login" />} />
       <Route path="/profile-settings" element={session ? <ProfileSettings session={session} /> : <Navigate to="/login" />} />
       <Route path="/profile/:userId" element={session ? <ProfileSettings session={session} /> : <Navigate to="/login" />} />
+      <Route path="/chat/:userId" element={session ? <ChatRoom session={session} /> : <Navigate to="/login" />} />
     </Routes>
   )
 }
