@@ -19,10 +19,28 @@ export default function ProfileSettings({ session }) {
   const [campus, setCampus] = useState('')
   const [avatarUrl, setAvatarUrl] = useState(null)
   const [coverUrl, setCoverUrl] = useState(null)
+  const [followersCount, setFollowersCount] = useState(0)
+  const [followingCount, setFollowingCount] = useState(0)
 
   useEffect(() => {
     fetchProfile()
+    fetchFollowCounts()
   }, [])
+
+  const fetchFollowCounts = async () => {
+    const { count: followers } = await supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('follows_id', session.user.id)
+
+    const { count: following } = await supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', session.user.id)
+
+    setFollowersCount(followers || 0)
+    setFollowingCount(following || 0)
+  }
 
   const fetchProfile = async () => {
     setLoading(true)
@@ -242,31 +260,75 @@ export default function ProfileSettings({ session }) {
           </>
         ) : (
           <>
-            <h2 style={{ fontFamily: font.display, fontSize: 20, fontWeight: 700, color: colors.text, margin: '0 0 2px' }}>
+            <h2 style={{ fontFamily: font.display, fontSize: 26, fontWeight: 700, color: colors.text, margin: '0 0 4px' }}>
               {fullName || 'No name set'}
             </h2>
 
             {(department || level) && (
-              <p style={{ fontSize: 14, fontWeight: 700, color: colors.text, margin: '0 0 4px' }}>
+              <p style={{ fontSize: 17, fontWeight: 700, color: colors.text, margin: '0 0 4px' }}>
                 {[department, level].filter(Boolean).join(' · ')}
               </p>
             )}
 
             {campus && (
-              <p style={{ fontSize: 13, color: colors.textMuted, margin: '0 0 14px' }}>
+              <p style={{ fontSize: 15, color: colors.textMuted, margin: '0 0 16px' }}>
                 {campus}
               </p>
             )}
 
+            <div style={{ display: 'flex', gap: 24, marginBottom: 18 }}>
+              <button
+                onClick={() => navigate('/followers')}
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: font.body }}
+              >
+                <span style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>Followers </span>
+                <span style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>{followersCount.toLocaleString()}</span>
+              </button>
+              <button
+                onClick={() => navigate('/following')}
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: font.body }}
+              >
+                <span style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>Following </span>
+                <span style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>{followingCount.toLocaleString()}</span>
+              </button>
+            </div>
+
             {bio ? (
-              <p style={{ fontSize: 14, color: colors.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', margin: 0 }}>
+              <p style={{ fontSize: 17, color: colors.text, lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: '0 0 20px' }}>
                 {bio}
               </p>
             ) : (
-              <p style={{ fontSize: 14, color: colors.textMuted, fontStyle: 'italic', margin: 0 }}>
+              <p style={{ fontSize: 15, color: colors.textMuted, fontStyle: 'italic', margin: '0 0 20px' }}>
                 No bio yet.
               </p>
             )}
+
+            <button
+              onClick={() => navigate('/create-post')}
+              style={{
+                width: '100%',
+                background: colors.surface,
+                border: `1px solid ${colors.border}`,
+                borderRadius: 14,
+                padding: '12px 16px',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{
+                display: 'inline-block',
+                background: colors.bg,
+                borderRadius: 20,
+                padding: '10px 16px',
+                color: colors.textMuted,
+                fontSize: 14,
+                fontFamily: font.body,
+                width: '100%',
+                boxSizing: 'border-box',
+              }}>
+                Share something with campus...
+              </span>
+            </button>
           </>
         )}
       </div>
