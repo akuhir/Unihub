@@ -10,6 +10,7 @@ export default function ChatRoom({ session }) {
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(true)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -82,6 +83,41 @@ export default function ChatRoom({ session }) {
     }
   }
 
+  const handleImageSend = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setUploadingImage(true)
+    const fileExt = file.name.split('.').pop()
+    const filePath = `${session.user.id}/${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('chat-media')
+      .upload(filePath, file)
+
+    if (uploadError) {
+      alert('Upload failed: ' + uploadError.message)
+      setUploadingImage(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('chat-media').getPublicUrl(filePath)
+
+    const { error: insertError } = await supabase.from('messages').insert({
+      sender_id: session.user.id,
+      receiver_id: userId,
+      media_url: urlData.publicUrl,
+      media_type: 'image',
+    })
+
+    if (insertError) {
+      alert('Failed to send image: ' + insertError.message)
+    }
+
+    setUploadingImage(false)
+    e.target.value = ''
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: colors.bg, fontFamily: font.body, display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
@@ -136,13 +172,22 @@ export default function ChatRoom({ session }) {
                   background: isMine ? '#DCF0FE' : colors.surface,
                   border: isMine ? 'none' : `1px solid ${colors.border}`,
                   borderRadius: 16,
-                  padding: '10px 14px',
+                  padding: msg.media_type === 'image' ? 6 : '10px 14px',
+                  overflow: 'hidden',
                 }}
               >
-                <p style={{ margin: 0, fontSize: 14, color: colors.text, whiteSpace: 'pre-wrap' }}>
-                  {msg.content}
-                </p>
-                <p style={{ margin: '4px 0 0', fontSize: 10, color: colors.textMuted, textAlign: 'right' }}>
+                {msg.media_type === 'image' && msg.media_url ? (
+                  <img
+                    src={msg.media_url}
+                    alt="Sent"
+                    style={{ maxWidth: '100%', borderRadius: 12, display: 'block' }}
+                  />
+                ) : (
+                  <p style={{ margin: 0, fontSize: 14, color: colors.text, whiteSpace: 'pre-wrap' }}>
+                    {msg.content}
+                  </p>
+                )}
+                <p style={{ margin: msg.media_type === 'image' ? '4px 4px 0' : '4px 0 0', fontSize: 10, color: colors.textMuted, textAlign: 'right' }}>
                   {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
@@ -155,11 +200,21 @@ export default function ChatRoom({ session }) {
       {/* Input */}
       <form onSubmit={handleSend} style={{
         display: 'flex',
+        alignItems: 'center',
         gap: 8,
         padding: '12px 20px',
         background: colors.surface,
         borderTop: `1px solid ${colors.border}`,
       }}>
+        <label style={{
+          width: 38, height: 38, borderRadius: 19,
+          background: colors.bg, display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', flexShrink: 0, fontSize: 16,
+        }}>
+          {uploadingImage ? '...' : '📷'}
+          <input type="file" accept="image/*" onChange={handleImageSend} style={{ display: 'none' }} disabled={uploadingImage} />
+        </label>
         <input
           type="text"
           placeholder="Type a message..."
@@ -188,6 +243,7 @@ export default function ChatRoom({ session }) {
             fontWeight: 700,
             cursor: 'pointer',
             fontFamily: font.body,
+            flexShrink: 0,
           }}
         >
           Send
