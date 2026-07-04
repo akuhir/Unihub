@@ -37,27 +37,29 @@ export default function Login() {
     }}>
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ marginBottom: 28, textAlign: 'center' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 56,
-            height: 56,
-            borderRadius: 16,
-            background: colors.blue,
-            color: '#fff',
+          <img
+            src="/campora-logo.png"
+            alt="Campora"
+            style={{ width: 64, height: 64, borderRadius: 18, marginBottom: 12 }}
+          />
+          <p style={{
             fontFamily: font.display,
             fontWeight: 700,
-            fontSize: 22,
-            marginBottom: 16,
+            fontSize: 20,
+            color: colors.blueDark,
+            letterSpacing: 1,
+            margin: '0 0 2px',
           }}>
-            UH
-          </div>
+            CAMPORA
+          </p>
+          <p style={{ color: colors.textMuted, fontSize: 13, margin: '0 0 18px' }}>
+            AKUM's first social app
+          </p>
           <h1 style={{ fontFamily: font.display, fontSize: 26, fontWeight: 700, color: colors.text, margin: 0 }}>
             Welcome back
           </h1>
           <p style={{ color: colors.textMuted, marginTop: 6, fontSize: 14 }}>
-            Log in to UniHub
+            Connect. Share. Grow.
           </p>
         </div>
 
