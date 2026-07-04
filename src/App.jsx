@@ -67,6 +67,7 @@ export default function App() {
       />
       <Route path="/menu" element={session ? <Menu /> : <Navigate to="/login" />} />
       <Route path="/profile-settings" element={session ? <ProfileSettings session={session} /> : <Navigate to="/login" />} />
+      <Route path="/profile/:userId" element={session ? <ProfileSettings session={session} /> : <Navigate to="/login" />} />
     </Routes>
   )
 }
