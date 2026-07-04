@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { colors, font } from '../theme.js'
+import PostCard from '../components/PostCard.jsx'
 
 export default function ProfileSettings({ session }) {
   const navigate = useNavigate()
+  const { userId } = useParams()
+
+  // If no :userId in the URL, we're viewing our own profile (e.g. via /profile-settings)
+  const viewingUserId = userId || session.user.id
+  const isOwnProfile = viewingUserId === session.user.id
+
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -21,33 +28,26 @@ export default function ProfileSettings({ session }) {
   const [coverUrl, setCoverUrl] = useState(null)
   const [followersCount, setFollowersCount] = useState(0)
   const [followingCount, setFollowingCount] = useState(0)
+  const [posts, setPosts] = useState([])
+  const [loadingPosts, setLoadingPosts] = useState(true)
+
+  // Follow state (only relevant when viewing someone else)
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
 
   useEffect(() => {
     fetchProfile()
     fetchFollowCounts()
-  }, [])
-
-  const fetchFollowCounts = async () => {
-    const { count: followers } = await supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('follows_id', session.user.id)
-
-    const { count: following } = await supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', session.user.id)
-
-    setFollowersCount(followers || 0)
-    setFollowingCount(following || 0)
-  }
+    fetchPosts()
+    if (!isOwnProfile) checkFollowStatus()
+  }, [viewingUserId])
 
   const fetchProfile = async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', session.user.id)
+      .eq('id', viewingUserId)
       .single()
 
     if (!error && data) {
@@ -61,6 +61,72 @@ export default function ProfileSettings({ session }) {
       setCoverUrl(data.cover_url)
     }
     setLoading(false)
+  }
+
+  const fetchFollowCounts = async () => {
+    const { count: followers } = await supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('follows_id', viewingUserId)
+
+    const { count: following } = await supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', viewingUserId)
+
+    setFollowersCount(followers || 0)
+    setFollowingCount(following || 0)
+  }
+
+  const fetchPosts = async () => {
+    setLoadingPosts(true)
+    const { data } = await supabase
+      .from('posts')
+      .select('*, profiles(full_name, avatar_url)')
+      .eq('user_id', viewingUserId)
+      .order('created_at', { ascending: false })
+    setPosts(data || [])
+    setLoadingPosts(false)
+  }
+
+  const checkFollowStatus = async () => {
+    const { data } = await supabase
+      .from('follows')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('follows_id', viewingUserId)
+      .maybeSingle()
+    setIsFollowing(!!data)
+  }
+
+  const handleFollowToggle = async () => {
+    setFollowLoading(true)
+    if (isFollowing) {
+      await supabase
+        .from('follows')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('follows_id', viewingUserId)
+      setIsFollowing(false)
+      setFollowersCount((c) => Math.max(0, c - 1))
+    } else {
+      const { error } = await supabase
+        .from('follows')
+        .insert({ user_id: session.user.id, follows_id: viewingUserId })
+      if (!error) {
+        setIsFollowing(true)
+        setFollowersCount((c) => c + 1)
+      }
+    }
+    setFollowLoading(false)
+  }
+
+  const handleMessage = () => {
+    navigate(`/chat/${viewingUserId}`)
+  }
+
+  const handlePostDeleted = (postId) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId))
   }
 
   const handleImageUpload = async (e, type) => {
@@ -149,7 +215,7 @@ export default function ProfileSettings({ session }) {
           </span>
         </div>
 
-        {!editing && (
+        {isOwnProfile && !editing && (
           <button
             onClick={() => setEditing(true)}
             style={{
@@ -278,14 +344,14 @@ export default function ProfileSettings({ session }) {
 
             <div style={{ display: 'flex', gap: 24, marginBottom: 18 }}>
               <button
-                onClick={() => navigate('/followers')}
+                onClick={() => navigate(isOwnProfile ? '/followers' : `/followers/${viewingUserId}`)}
                 style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: font.body }}
               >
                 <span style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>Followers </span>
                 <span style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>{followersCount.toLocaleString()}</span>
               </button>
               <button
-                onClick={() => navigate('/following')}
+                onClick={() => navigate(isOwnProfile ? '/following' : `/following/${viewingUserId}`)}
                 style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: font.body }}
               >
                 <span style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>Following </span>
@@ -303,32 +369,94 @@ export default function ProfileSettings({ session }) {
               </p>
             )}
 
-            <button
-              onClick={() => navigate('/create-post')}
-              style={{
-                width: '100%',
-                background: colors.surface,
-                border: `1px solid ${colors.border}`,
-                borderRadius: 14,
-                padding: '12px 16px',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-            >
-              <span style={{
-                display: 'inline-block',
-                background: colors.bg,
-                borderRadius: 20,
-                padding: '10px 16px',
-                color: colors.textMuted,
-                fontSize: 14,
-                fontFamily: font.body,
-                width: '100%',
-                boxSizing: 'border-box',
-              }}>
-                Share something with campus...
-              </span>
-            </button>
+            {isOwnProfile ? (
+              <button
+                onClick={() => navigate('/create-post')}
+                style={{
+                  width: '100%',
+                  background: colors.surface,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: 14,
+                  padding: '12px 16px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  marginBottom: 20,
+                }}
+              >
+                <span style={{
+                  display: 'inline-block',
+                  background: colors.bg,
+                  borderRadius: 20,
+                  padding: '10px 16px',
+                  color: colors.textMuted,
+                  fontSize: 14,
+                  fontFamily: font.body,
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}>
+                  Share something with campus...
+                </span>
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                <button
+                  onClick={handleFollowToggle}
+                  disabled={followLoading}
+                  style={{
+                    flex: 1,
+                    padding: '12px 0',
+                    borderRadius: 10,
+                    border: isFollowing ? `1px solid ${colors.border}` : 'none',
+                    background: isFollowing ? colors.surface : colors.blue,
+                    color: isFollowing ? colors.text : '#fff',
+                    fontFamily: font.body,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+                </button>
+                <button
+                  onClick={handleMessage}
+                  style={{
+                    flex: 1,
+                    padding: '12px 0',
+                    borderRadius: 10,
+                    border: `1px solid ${colors.blue}`,
+                    background: colors.surface,
+                    color: colors.blue,
+                    fontFamily: font.body,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Message
+                </button>
+              </div>
+            )}
+
+            <div>
+              {loadingPosts ? (
+                <p style={{ color: colors.textMuted, fontSize: 14 }}>Loading posts...</p>
+              ) : posts.length === 0 ? (
+                <div style={{
+                  border: `1px dashed ${colors.border}`,
+                  borderRadius: 16,
+                  padding: '28px 20px',
+                  textAlign: 'center',
+                }}>
+                  <p style={{ color: colors.textMuted, fontSize: 14, margin: 0 }}>
+                    No posts yet.
+                  </p>
+                </div>
+              ) : (
+                posts.map((post) => (
+                  <PostCard key={post.id} post={post} session={session} onDelete={handlePostDeleted} />
+                ))
+              )}
+            </div>
           </>
         )}
       </div>
