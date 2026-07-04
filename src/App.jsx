@@ -10,6 +10,8 @@ import Feed from './pages/Feed.jsx'
 import FindFriends from './pages/FindFriends.jsx'
 import Chats from './pages/Chats.jsx'
 import Notifications from './pages/Notifications.jsx'
+import ProfileSettings from './pages/ProfileSettings.jsx'
+import ProfileCompletionBanner from './components/ProfileCompletionBanner.jsx'
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -64,15 +66,43 @@ export default function App() {
         element={session ? <AppShell session={session}><Notifications session={session} /></AppShell> : <Navigate to="/login" />}
       />
       <Route path="/menu" element={session ? <Menu /> : <Navigate to="/login" />} />
+      <Route path="/profile-settings" element={session ? <ProfileSettings session={session} /> : <Navigate to="/login" />} />
     </Routes>
   )
 }
 
 function AppShell({ session, children }) {
+  const [showBanner, setShowBanner] = useState(false)
+
+  useEffect(() => {
+    checkProfileCompletion()
+  }, [])
+
+  const checkProfileCompletion = async () => {
+    const dismissed = sessionStorage.getItem('profileBannerDismissed')
+    if (dismissed) return
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('department, level, bio, avatar_url')
+      .eq('id', session.user.id)
+      .single()
+
+    if (data && (!data.department || !data.level)) {
+      setShowBanner(true)
+    }
+  }
+
+  const handleDismiss = () => {
+    sessionStorage.setItem('profileBannerDismissed', 'true')
+    setShowBanner(false)
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: colors.bg, fontFamily: font.body }}>
       <TopBar />
       <IconRow />
+      {showBanner && <ProfileCompletionBanner onDismiss={handleDismiss} />}
       {children}
     </div>
   )
