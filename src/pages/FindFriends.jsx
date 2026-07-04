@@ -28,9 +28,15 @@ export default function FindFriends({ session }) {
   const fetchFollowing = async () => {
     const { data } = await supabase
       .from('follows')
-      .select('follows_id')
-      .eq('user_id', session.user.id)
-    setFollowingIds(new Set((data || []).map((f) => f.follows_id)))
+      .select('user_id, follows_id')
+      .or(`user_id.eq.${session.user.id},follows_id.eq.${session.user.id}`)
+
+    const ids = new Set()
+    ;(data || []).forEach((row) => {
+      if (row.user_id === session.user.id) ids.add(row.follows_id)
+      if (row.follows_id === session.user.id) ids.add(row.user_id)
+    })
+    setFollowingIds(ids)
   }
 
   const searchUsers = async (text) => {
@@ -50,7 +56,10 @@ export default function FindFriends({ session }) {
     const isFollowing = followingIds.has(targetId)
 
     if (isFollowing) {
-      await supabase.from('follows').delete().eq('user_id', session.user.id).eq('follows_id', targetId)
+      await supabase
+        .from('follows')
+        .delete()
+        .or(`and(user_id.eq.${session.user.id},follows_id.eq.${targetId}),and(user_id.eq.${targetId},follows_id.eq.${session.user.id})`)
       setFollowingIds((prev) => {
         const next = new Set(prev)
         next.delete(targetId)

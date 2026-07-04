@@ -64,18 +64,15 @@ export default function ProfileSettings({ session }) {
   }
 
   const fetchFollowCounts = async () => {
+    // Since a follow is mutual (one row = connection both ways),
+    // both "followers" and "following" count rows where this user appears on either side.
     const { count: followers } = await supabase
       .from('follows')
       .select('*', { count: 'exact', head: true })
-      .eq('follows_id', viewingUserId)
-
-    const { count: following } = await supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', viewingUserId)
+      .or(`user_id.eq.${viewingUserId},follows_id.eq.${viewingUserId}`)
 
     setFollowersCount(followers || 0)
-    setFollowingCount(following || 0)
+    setFollowingCount(followers || 0)
   }
 
   const fetchPosts = async () => {
@@ -93,8 +90,7 @@ export default function ProfileSettings({ session }) {
     const { data } = await supabase
       .from('follows')
       .select('id')
-      .eq('user_id', session.user.id)
-      .eq('follows_id', viewingUserId)
+      .or(`and(user_id.eq.${session.user.id},follows_id.eq.${viewingUserId}),and(user_id.eq.${viewingUserId},follows_id.eq.${session.user.id})`)
       .maybeSingle()
     setIsFollowing(!!data)
   }
@@ -105,10 +101,10 @@ export default function ProfileSettings({ session }) {
       await supabase
         .from('follows')
         .delete()
-        .eq('user_id', session.user.id)
-        .eq('follows_id', viewingUserId)
+        .or(`and(user_id.eq.${session.user.id},follows_id.eq.${viewingUserId}),and(user_id.eq.${viewingUserId},follows_id.eq.${session.user.id})`)
       setIsFollowing(false)
       setFollowersCount((c) => Math.max(0, c - 1))
+      setFollowingCount((c) => Math.max(0, c - 1))
     } else {
       const { error } = await supabase
         .from('follows')
@@ -116,6 +112,7 @@ export default function ProfileSettings({ session }) {
       if (!error) {
         setIsFollowing(true)
         setFollowersCount((c) => c + 1)
+        setFollowingCount((c) => c + 1)
       }
     }
     setFollowLoading(false)
