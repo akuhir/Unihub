@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { colors, font } from '../App.jsx'
+import { colors, font } from '../theme.js'
 
 export default function Register() {
   const navigate = useNavigate()
