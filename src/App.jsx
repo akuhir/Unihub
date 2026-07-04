@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { Search, Menu as MenuIcon, Home, Users, MessageCircle, Bell } from 'lucide-react'
 import { supabase } from './lib/supabaseClient'
 import { colors, font } from './theme.js'
 import Login from './pages/Login.jsx'
@@ -94,10 +95,10 @@ function TopBar() {
 
       <div style={{ display: 'flex', gap: 10 }}>
         <IconButton onClick={() => navigate('/search')} label="Search">
-          🔍
+          <Search size={20} color={colors.text} />
         </IconButton>
         <IconButton onClick={() => navigate('/menu')} label="Menu">
-          ☰
+          <MenuIcon size={20} color={colors.text} />
         </IconButton>
       </div>
     </div>
@@ -109,10 +110,10 @@ function IconRow() {
   const location = useLocation()
 
   const items = [
-    { path: '/', label: 'Home', icon: '⌂' },
-    { path: '/find-friends', label: 'Find Friends', icon: '👥' },
-    { path: '/chats', label: 'Messages', icon: '💬' },
-    { path: '/notifications', label: 'Notifications', icon: '🔔' },
+    { path: '/', label: 'Home', Icon: Home },
+    { path: '/find-friends', label: 'Find Friends', Icon: Users },
+    { path: '/chats', label: 'Messages', Icon: MessageCircle },
+    { path: '/notifications', label: 'Notifications', Icon: Bell },
   ]
 
   return (
@@ -120,7 +121,7 @@ function IconRow() {
       display: 'flex',
       justifyContent: 'space-around',
       alignItems: 'center',
-      padding: '10px 8px',
+      padding: '12px 8px',
       background: colors.surface,
       borderBottom: `1px solid ${colors.border}`,
     }}>
@@ -134,14 +135,18 @@ function IconRow() {
             style={{
               background: 'none',
               border: 'none',
-              fontSize: 22,
-              padding: '6px 16px',
+              padding: '4px 18px',
               cursor: 'pointer',
-              opacity: active ? 1 : 0.55,
-              borderBottom: active ? `2px solid ${colors.blue}` : '2px solid transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {item.icon}
+            <item.Icon
+              size={25}
+              color={active ? colors.blue : colors.text}
+              strokeWidth={active ? 2.3 : 1.8}
+            />
           </button>
         )
       })}
@@ -155,12 +160,11 @@ function IconButton({ onClick, label, children }) {
       onClick={onClick}
       aria-label={label}
       style={{
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         border: 'none',
         background: colors.bg,
-        fontSize: 16,
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
