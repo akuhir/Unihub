@@ -4,9 +4,9 @@ import { supabase } from '../lib/supabaseClient'
 import { colors, font } from '../theme.js'
 
 const MENU_ITEMS = [
-  { label: 'Profile settings', path: '/profile-settings', icon: '👤' },
-  { label: 'Messages', path: '/chats', icon: '💬' },
-  { label: 'Find friends', path: '/find-friends', icon: '🔍' },
+  { label: 'Profile settings', path: '/profile-settings' },
+  { label: 'Messages', path: '/chats' },
+  { label: 'Followers', path: '/followers' },
 ]
 
 export default function Menu() {
@@ -18,8 +18,7 @@ export default function Menu() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: colors.bg, fontFamily: font.body }}>
-      {/* Header */}
+    <div style={{ minHeight: '100vh', background: colors.bg, fontFamily: font.body, display: 'flex', flexDirection: 'column' }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -30,14 +29,7 @@ export default function Menu() {
       }}>
         <button
           onClick={() => navigate(-1)}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: 20,
-            cursor: 'pointer',
-            color: colors.text,
-            padding: 0,
-          }}
+          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: colors.text, padding: 0 }}
           aria-label="Back"
         >
           ←
@@ -47,8 +39,7 @@ export default function Menu() {
         </span>
       </div>
 
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '16px 20px' }}>
-        {/* Navigation items */}
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '16px 20px', width: '100%', boxSizing: 'border-box', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{
           background: colors.surface,
           border: `1px solid ${colors.border}`,
@@ -62,27 +53,23 @@ export default function Menu() {
               onClick={() => navigate(item.path)}
               style={{
                 width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
                 padding: '16px 18px',
                 background: 'none',
                 border: 'none',
                 borderBottom: i < MENU_ITEMS.length - 1 ? `1px solid ${colors.border}` : 'none',
                 fontSize: 15,
+                fontWeight: 700,
                 color: colors.text,
                 fontFamily: font.body,
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
             >
-              <span style={{ fontSize: 18 }}>{item.icon}</span>
               {item.label}
             </button>
           ))}
         </div>
 
-        {/* Dark mode placeholder */}
         <div style={{
           background: colors.surface,
           border: `1px solid ${colors.border}`,
@@ -93,14 +80,10 @@ export default function Menu() {
           alignItems: 'center',
           marginBottom: 16,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{ fontSize: 18 }}>🌙</span>
-            <span style={{ fontSize: 15, color: colors.text }}>Dark mode</span>
-          </div>
+          <span style={{ fontSize: 15, fontWeight: 700, color: colors.text }}>Dark mode</span>
           <ToggleSwitch />
         </div>
 
-        {/* About + Logout */}
         <div style={{
           background: colors.surface,
           border: `1px solid ${colors.border}`,
@@ -112,52 +95,47 @@ export default function Menu() {
             onClick={() => navigate('/about')}
             style={{
               width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
               padding: '16px 18px',
               background: 'none',
               border: 'none',
-              borderBottom: `1px solid ${colors.border}`,
               fontSize: 15,
+              fontWeight: 700,
               color: colors.text,
               fontFamily: font.body,
               cursor: 'pointer',
               textAlign: 'left',
             }}
           >
-            <span style={{ fontSize: 18 }}>ℹ️</span>
             About
           </button>
-
-          <button
-            onClick={handleLogout}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              padding: '16px 18px',
-              background: 'none',
-              border: 'none',
-              fontSize: 15,
-              color: colors.red,
-              fontFamily: font.body,
-              fontWeight: 600,
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
-          >
-            <span style={{ fontSize: 18 }}>🚪</span>
-            Log out
-          </button>
         </div>
+
+        <div style={{ flex: 1 }} />
+
+        <button
+          onClick={handleLogout}
+          style={{
+            width: '100%',
+            padding: '16px 18px',
+            background: colors.surface,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 14,
+            fontSize: 15,
+            fontWeight: 700,
+            color: colors.red,
+            fontFamily: font.body,
+            cursor: 'pointer',
+            textAlign: 'left',
+            marginBottom: 8,
+          }}
+        >
+          Log out
+        </button>
       </div>
     </div>
   )
 }
 
-// Visual-only toggle for now — doesn't change anything yet
 function ToggleSwitch() {
   const [on, setOn] = React.useState(false)
   return (
