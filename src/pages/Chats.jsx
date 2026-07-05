@@ -63,9 +63,8 @@ export default function Chats({ session }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {conversations.map(({ otherPerson, lastMessage }) => (
-            <button
+            <div
               key={otherPerson.id}
-              onClick={() => navigate(`/chat/${otherPerson.id}`)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -74,24 +73,33 @@ export default function Chats({ session }) {
                 border: `1px solid ${colors.border}`,
                 borderRadius: 14,
                 padding: '12px 14px',
-                cursor: 'pointer',
-                textAlign: 'left',
               }}
             >
-              {otherPerson.avatar_url ? (
-                <img src={otherPerson.avatar_url} alt="" style={{ width: 44, height: 44, borderRadius: 22, objectFit: 'cover', flexShrink: 0 }} />
-              ) : (
-                <div style={{
-                  width: 44, height: 44, borderRadius: 22,
-                  background: colors.blue, color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: font.display, fontWeight: 700, fontSize: 17,
-                  flexShrink: 0,
-                }}>
-                  {(otherPerson.full_name || '?').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); navigate(`/profile/${otherPerson.id}`) }}
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0 }}
+              >
+                {otherPerson.avatar_url ? (
+                  <img src={otherPerson.avatar_url} alt="" style={{ width: 44, height: 44, borderRadius: 22, objectFit: 'cover' }} />
+                ) : (
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 22,
+                    background: colors.blue, color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: font.display, fontWeight: 700, fontSize: 17,
+                  }}>
+                    {(otherPerson.full_name || '?').charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </button>
+              <button
+                onClick={() => navigate(`/chat/${otherPerson.id}`)}
+                style={{
+                  flex: 1, minWidth: 0,
+                  background: 'none', border: 'none', padding: 0,
+                  cursor: 'pointer', textAlign: 'left',
+                }}
+              >
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: colors.text }}>
                   {otherPerson.full_name || 'Unknown'}
                 </p>
@@ -102,11 +110,11 @@ export default function Chats({ session }) {
                   {lastMessage.sender_id === session.user.id ? 'You: ' : ''}
                   {lastMessage.content || (lastMessage.media_type === 'image' ? '📷 Photo' : lastMessage.media_type === 'audio' ? '🎤 Voice note' : 'Message')}
                 </p>
-              </div>
+              </button>
               <span style={{ fontSize: 11, color: colors.textDisabled, flexShrink: 0 }}>
                 {new Date(lastMessage.created_at).toLocaleDateString()}
               </span>
-            </button>
+            </div>
           ))}
         </div>
       )}
