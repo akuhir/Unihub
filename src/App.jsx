@@ -80,8 +80,7 @@ export default function App() {
       <Route path="/following" element={session ? <Followers session={session} /> : <Navigate to="/login" />} />
       <Route path="/following/:userId" element={session ? <Followers session={session} /> : <Navigate to="/login" />} />
       <Route path="/about" element={session ? <About /> : <Navigate to="/login" />} />
-      <Route path="/search" element={session ? <Search session={session} /> : <Navigate to="/login" />} />
-    </Routes>
+      <Route path="/search" element={session ? <SearchPage session={session} /> : <Navigate to="/login" />} />
   )
 }
 
