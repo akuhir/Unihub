@@ -100,7 +100,7 @@ export default function Chats({ session }) {
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
                   {lastMessage.sender_id === session.user.id ? 'You: ' : ''}
-                  {lastMessage.content || (lastMessage.media_type === 'image' ? '📷 Photo' : 'Message')}
+                  {lastMessage.content || (lastMessage.media_type === 'image' ? '📷 Photo' : lastMessage.media_type === 'audio' ? '🎤 Voice note' : 'Message')}
                 </p>
               </div>
               <span style={{ fontSize: 11, color: colors.textDisabled, flexShrink: 0 }}>
