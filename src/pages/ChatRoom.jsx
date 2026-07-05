@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Mic, Square, Camera, ArrowLeft } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { colors, font } from '../theme.js'
 
@@ -11,7 +12,11 @@ export default function ChatRoom({ session }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(true)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [uploadingVoice, setUploadingVoice] = useState(false)
   const bottomRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef = useRef([])
 
   useEffect(() => {
     fetchOtherPerson()
@@ -118,6 +123,67 @@ export default function ChatRoom({ session }) {
     e.target.value = ''
   }
 
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      audioChunksRef.current = []
+
+      recorder.ondataavailable = (e) => {
+        audioChunksRef.current.push(e.data)
+      }
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        stream.getTracks().forEach((track) => track.stop())
+        await uploadVoiceNote(audioBlob)
+      }
+
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+    } catch (err) {
+      alert('Could not access microphone: ' + err.message)
+    }
+  }
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+    }
+  }
+
+  const uploadVoiceNote = async (audioBlob) => {
+    setUploadingVoice(true)
+    const filePath = `${session.user.id}/${Date.now()}.webm`
+
+    const { error: uploadError } = await supabase.storage
+      .from('voice-notes')
+      .upload(filePath, audioBlob)
+
+    if (uploadError) {
+      alert('Voice note upload failed: ' + uploadError.message)
+      setUploadingVoice(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('voice-notes').getPublicUrl(filePath)
+
+    const { error: insertError } = await supabase.from('messages').insert({
+      sender_id: session.user.id,
+      receiver_id: userId,
+      media_url: urlData.publicUrl,
+      media_type: 'audio',
+    })
+
+    if (insertError) {
+      alert('Failed to send voice note: ' + insertError.message)
+    }
+
+    setUploadingVoice(false)
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: colors.bg, fontFamily: font.body, display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
@@ -131,9 +197,9 @@ export default function ChatRoom({ session }) {
       }}>
         <button
           onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: colors.text, padding: 0 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: colors.text, padding: 0, display: 'flex', alignItems: 'center' }}
         >
-          ←
+          <ArrowLeft size={20} />
         </button>
         {otherPerson?.avatar_url ? (
           <img src={otherPerson.avatar_url} alt="" style={{ width: 32, height: 32, borderRadius: 16, objectFit: 'cover' }} />
@@ -182,6 +248,8 @@ export default function ChatRoom({ session }) {
                     alt="Sent"
                     style={{ maxWidth: '100%', borderRadius: 12, display: 'block' }}
                   />
+                ) : msg.media_type === 'audio' && msg.media_url ? (
+                  <audio controls src={msg.media_url} style={{ maxWidth: '220px', height: 36 }} />
                 ) : (
                   <p style={{ margin: 0, fontSize: 14, color: colors.text, whiteSpace: 'pre-wrap' }}>
                     {msg.content}
@@ -210,11 +278,37 @@ export default function ChatRoom({ session }) {
           width: 38, height: 38, borderRadius: 19,
           background: colors.bg, display: 'flex',
           alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', flexShrink: 0, fontSize: 16,
+          cursor: 'pointer', flexShrink: 0,
         }}>
-          {uploadingImage ? '...' : '📷'}
+          {uploadingImage ? (
+            <span style={{ fontSize: 12, color: colors.textMuted }}>...</span>
+          ) : (
+            <Camera size={18} color={colors.text} />
+          )}
           <input type="file" accept="image/*" onChange={handleImageSend} style={{ display: 'none' }} disabled={uploadingImage} />
         </label>
+        <button
+          type="button"
+          onClick={isRecording ? handleStopRecording : handleStartRecording}
+          disabled={uploadingVoice}
+          style={{
+            width: 38, height: 38, borderRadius: 19,
+            background: isRecording ? colors.red : colors.bg,
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', flexShrink: 0,
+          }}
+          aria-label={isRecording ? 'Stop recording' : 'Record voice note'}
+        >
+          {uploadingVoice ? (
+            <span style={{ fontSize: 12, color: colors.textMuted }}>...</span>
+          ) : isRecording ? (
+            <Square size={16} color="#fff" fill="#fff" />
+          ) : (
+            <Mic size={18} color={colors.text} />
+          )}
+        </button>
         <input
           type="text"
           placeholder="Type a message..."
