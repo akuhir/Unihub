@@ -15,7 +15,7 @@ import ChatRoom from './pages/ChatRoom.jsx'
 import CreatePost from './pages/CreatePost.jsx'
 import Followers from './pages/Followers.jsx'
 import About from './pages/About.jsx'
-import Search from './pages/Search.jsx'
+import SearchPage from './pages/Search.jsx'
 import ProfileCompletionBanner from './components/ProfileCompletionBanner.jsx'
 
 export default function App() {
