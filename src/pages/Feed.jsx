@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { colors, font } from '../theme.js'
+import PostCard from '../components/PostCard.jsx'
 
 export default function Feed({ session }) {
   const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchProfile()
+    fetchFeed()
   }, [])
 
   const fetchProfile = async () => {
@@ -18,6 +22,23 @@ export default function Feed({ session }) {
       .eq('id', session.user.id)
       .single()
     setProfile(data)
+  }
+
+  const fetchFeed = async () => {
+    setLoading(true)
+
+    const { data: postsData, error } = await supabase
+      .from('posts')
+      .select('*, profiles(full_name, avatar_url)')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (!error) setPosts(postsData)
+    setLoading(false)
+  }
+
+  const handlePostDeleted = (postId) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId))
   }
 
   const initial = (profile?.full_name || session.user.email || '?').charAt(0).toUpperCase()
@@ -77,17 +98,25 @@ export default function Feed({ session }) {
         </div>
       </button>
 
-      {/* Feed placeholder */}
-      <div style={{
-        border: `1px dashed ${colors.border}`,
-        borderRadius: 16,
-        padding: '32px 20px',
-        textAlign: 'center',
-      }}>
-        <p style={{ color: colors.textMuted, fontSize: 14, margin: 0 }}>
-          No posts yet — the feed will show posts from people you follow.
-        </p>
-      </div>
+      {/* Feed */}
+      {loading ? (
+        <p style={{ color: colors.textMuted, fontSize: 14 }}>Loading...</p>
+      ) : posts.length === 0 ? (
+        <div style={{
+          border: `1px dashed ${colors.border}`,
+          borderRadius: 16,
+          padding: '32px 20px',
+          textAlign: 'center',
+        }}>
+          <p style={{ color: colors.textMuted, fontSize: 14, margin: 0 }}>
+            No posts yet — follow people or share something yourself.
+          </p>
+        </div>
+      ) : (
+        posts.map((post) => (
+          <PostCard key={post.id} post={post} session={session} onDelete={handlePostDeleted} />
+        ))
+      )}
     </div>
   )
 }
