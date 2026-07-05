@@ -12,6 +12,7 @@ export default function FindFriends({ session }) {
 
   useEffect(() => {
     fetchFollowing()
+    fetchSuggestions()
   }, [])
 
   useEffect(() => {
@@ -19,11 +20,24 @@ export default function FindFriends({ session }) {
       if (query.trim().length > 0) {
         searchUsers(query.trim())
       } else {
-        setResults([])
+        fetchSuggestions()
       }
     }, 300)
     return () => clearTimeout(timeout)
   }, [query])
+
+  const fetchSuggestions = async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, department, level, avatar_url')
+      .neq('id', session.user.id)
+      .order('created_at', { ascending: false })
+      .limit(30)
+
+    if (!error) setResults(data)
+    setLoading(false)
+  }
 
   const fetchFollowing = async () => {
     const { data } = await supabase
@@ -96,18 +110,7 @@ export default function FindFriends({ session }) {
       />
 
       {loading ? (
-        <p style={{ color: colors.textMuted, fontSize: 14 }}>Searching...</p>
-      ) : query.trim().length === 0 ? (
-        <div style={{
-          border: `1px dashed ${colors.border}`,
-          borderRadius: 16,
-          padding: '32px 20px',
-          textAlign: 'center',
-        }}>
-          <p style={{ color: colors.textMuted, fontSize: 14, margin: 0 }}>
-            Start typing a name to find people.
-          </p>
-        </div>
+        <p style={{ color: colors.textMuted, fontSize: 14 }}>Loading...</p>
       ) : results.length === 0 ? (
         <div style={{
           border: `1px dashed ${colors.border}`,
@@ -116,7 +119,7 @@ export default function FindFriends({ session }) {
           textAlign: 'center',
         }}>
           <p style={{ color: colors.textMuted, fontSize: 14, margin: 0 }}>
-            No one found matching "{query}".
+            {query.trim().length > 0 ? `No one found matching "${query}".` : 'No one to show yet.'}
           </p>
         </div>
       ) : (
