@@ -29,10 +29,14 @@ jobs:
       - name: Build web app
         run: npm run build
 
+      - name: Initialize Capacitor
+        run: npx cap init "Campora" "com.campora.app" --web-dir=dist
+
       - name: Add Android platform
-        run: |
-          npx cap add android || true
-          npx cap sync android
+        run: npx cap add android
+
+      - name: Sync web assets
+        run: npx cap sync android
 
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
