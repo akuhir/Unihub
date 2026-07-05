@@ -13,6 +13,9 @@ import Notifications from './pages/Notifications.jsx'
 import ProfileSettings from './pages/ProfileSettings.jsx'
 import ChatRoom from './pages/ChatRoom.jsx'
 import CreatePost from './pages/CreatePost.jsx'
+import Followers from './pages/Followers.jsx'
+import About from './pages/About.jsx'
+import Search from './pages/Search.jsx'
 import ProfileCompletionBanner from './components/ProfileCompletionBanner.jsx'
 
 export default function App() {
@@ -72,6 +75,12 @@ export default function App() {
       <Route path="/profile/:userId" element={session ? <ProfileSettings session={session} /> : <Navigate to="/login" />} />
       <Route path="/chat/:userId" element={session ? <ChatRoom session={session} /> : <Navigate to="/login" />} />
       <Route path="/create-post" element={session ? <CreatePost session={session} /> : <Navigate to="/login" />} />
+      <Route path="/followers" element={session ? <Followers session={session} /> : <Navigate to="/login" />} />
+      <Route path="/followers/:userId" element={session ? <Followers session={session} /> : <Navigate to="/login" />} />
+      <Route path="/following" element={session ? <Followers session={session} /> : <Navigate to="/login" />} />
+      <Route path="/following/:userId" element={session ? <Followers session={session} /> : <Navigate to="/login" />} />
+      <Route path="/about" element={session ? <About /> : <Navigate to="/login" />} />
+      <Route path="/search" element={session ? <Search session={session} /> : <Navigate to="/login" />} />
     </Routes>
   )
 }
