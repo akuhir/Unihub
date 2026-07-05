@@ -1,0 +1,8 @@
+{
+  "appId": "com.campora.app",
+  "appName": "Campora",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
