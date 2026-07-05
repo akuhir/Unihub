@@ -29,9 +29,6 @@ jobs:
       - name: Build web app
         run: npm run build
 
-      - name: Initialize Capacitor
-        run: npx cap init "Campora" "com.campora.app" --web-dir=dist
-
       - name: Add Android platform
         run: npx cap add android
 
